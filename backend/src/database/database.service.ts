@@ -14,7 +14,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       password: process.env.DB_PASSWORD ?? 'TuPassword123',
       database: process.env.DB_NAME ?? 'InventarioDB',
       options: {
-        instanceName: process.env.DB_INSTANCE || undefined, // ej: SQLEXPRESS
+        instanceName: process.env.DB_INSTANCE || undefined,
         encrypt: false,
         trustServerCertificate: true,
       },

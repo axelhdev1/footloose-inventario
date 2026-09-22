@@ -1,5 +1,5 @@
 export interface ProductoFila {
-  fila: number; // número de fila en el Excel
+  fila: number;
   nombre: string;
   sku: string;
   idCategoria: number;

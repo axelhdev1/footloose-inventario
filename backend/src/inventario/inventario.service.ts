@@ -6,7 +6,6 @@ import { ErrorFila, ProductoFila, ReporteCarga } from './inventario.types';
 
 type Campo = 'nombre' | 'sku' | 'categoria' | 'stock' | 'color' | 'talla' | 'modelo' | 'estado';
 
-
 const MAPA_COLUMNAS: Record<string, Campo> = {
   'nombre producto': 'nombre',
   'nombre del producto': 'nombre',
@@ -32,7 +31,6 @@ export class InventarioService {
   constructor(private readonly db: DatabaseService) {}
 
   async procesarArchivo(buffer: Buffer): Promise<ReporteCarga> {
-    // 1. Leer Excel (primera hoja)
     const libro = XLSX.read(buffer, { type: 'buffer' });
     const hoja = libro.Sheets[libro.SheetNames[0]];
     if (!hoja) throw new BadRequestException('El archivo no contiene hojas.');
@@ -40,19 +38,16 @@ export class InventarioService {
     const filasCrudas = XLSX.utils.sheet_to_json<Record<string, unknown>>(hoja, { defval: null });
     if (filasCrudas.length === 0) throw new BadRequestException('El archivo no contiene registros.');
 
-    // 2. Mapear encabezados -> campos
     const mapeo = this.mapearEncabezados(Object.keys(filasCrudas[0]));
 
-    // 3. Pre-cargar categorías en memoria (1 sola consulta, evita N+1)
     const pool = this.db.getPool();
     const categorias = await this.cargarCategorias(pool);
 
-    // 4. Validar filas
     const errores: ErrorFila[] = [];
-    const validos = new Map<string, ProductoFila>(); // clave = SKU (agrupa SKUs repetidos en el archivo)
+    const validos = new Map<string, ProductoFila>();
 
     filasCrudas.forEach((cruda, i) => {
-      const fila = i + 2; // +1 por base 0, +1 por fila de encabezado
+      const fila = i + 2;
       const resultado = this.validarFila(cruda, mapeo, categorias, fila);
       if ('errores' in resultado) {
         errores.push(resultado);
@@ -60,16 +55,14 @@ export class InventarioService {
       }
       const existente = validos.get(resultado.sku);
       if (existente) {
-        existente.stock += resultado.stock; // mismo SKU repetido en el archivo: se suma
+        existente.stock += resultado.stock;
       } else {
         validos.set(resultado.sku, resultado);
       }
     });
 
-    // 5. Guardar en BD dentro de una transacción
     const { insertados, actualizados } = await this.guardar(pool, [...validos.values()]);
 
-    // 6. Reporte
     const insertadosPorColor: Record<string, number> = {};
     const insertadosPorModelo: Record<string, number> = {};
     for (const p of insertados) {
@@ -88,15 +81,13 @@ export class InventarioService {
     };
   }
 
-  // ---------------------------------------------------------------------------
-
   private normalizar(texto: string): string {
     return texto
       .toString()
       .trim()
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '') // quita tildes
+      .replace(/[̀-ͯ]/g, '')
       .replace(/\s+/g, ' ');
   }
 
@@ -128,7 +119,7 @@ export class InventarioService {
 
   private parsearEstado(valor: unknown): boolean | null {
     const v = this.normalizar(this.texto(valor));
-    if (v === '') return true; // por defecto ACTIVO
+    if (v === '') return true;
     if (['1', 'true', 'si', 'activo', 'verdadero'].includes(v)) return true;
     if (['0', 'false', 'no', 'inactivo', 'falso'].includes(v)) return false;
     return null;
@@ -183,7 +174,6 @@ export class InventarioService {
     const tx = new sql.Transaction(pool);
     await tx.begin();
     try {
-      // SKUs existentes en 1 sola consulta (OPENJSON evita el límite de 2100 parámetros)
       const existentesRes = await new sql.Request(tx)
         .input('skus', sql.NVarChar(sql.MAX), JSON.stringify(productos.map((p) => p.sku)))
         .query<{ sku: string }>(
@@ -193,7 +183,6 @@ export class InventarioService {
 
       for (const p of productos) {
         if (existentes.has(p.sku)) {
-          // SKU existe -> se actualiza (suma) el stock
           await new sql.Request(tx)
             .input('sku', sql.VarChar(50), p.sku)
             .input('stock', sql.Int, p.stock)
@@ -220,7 +209,7 @@ export class InventarioService {
       await tx.commit();
       return { insertados, actualizados };
     } catch (error) {
-      await tx.rollback(); // atomicidad: si algo falla, no queda nada a medias
+      await tx.rollback();
       this.logger.error('Error en la carga, se hizo rollback', error as Error);
       throw error;
     }

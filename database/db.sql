@@ -1,4 +1,3 @@
-
 IF DB_ID('InventarioDB') IS NULL
     CREATE DATABASE InventarioDB;
 GO
@@ -13,7 +12,7 @@ GO
 CREATE TABLE dbo.categoria (
     id_categoria     INT IDENTITY(1,1) PRIMARY KEY,
     nombre_categoria VARCHAR(100) NOT NULL CONSTRAINT UQ_categoria_nombre UNIQUE,
-    activo           BIT NOT NULL CONSTRAINT DF_categoria_activo DEFAULT 1  -- 1 = ACTIVO
+    activo           BIT NOT NULL CONSTRAINT DF_categoria_activo DEFAULT 1
 );
 GO
 
@@ -27,10 +26,9 @@ CREATE TABLE dbo.producto (
     color        VARCHAR(50)  NOT NULL,
     talla        VARCHAR(20)  NULL,
     modelo       VARCHAR(100) NOT NULL,
-    estado       BIT          NOT NULL CONSTRAINT DF_producto_estado DEFAULT 1  -- 1 = ACTIVO
+    estado       BIT          NOT NULL CONSTRAINT DF_producto_estado DEFAULT 1
 );
 GO
-
 
 INSERT INTO dbo.categoria (nombre_categoria) VALUES
     ('Zapatillas'), ('Botines'), ('Sandalias'), ('Mocasines');
@@ -41,7 +39,6 @@ GO
 
 SELECT * FROM dbo.categoria;
 SELECT * FROM dbo.producto;
-
 
 SELECT * FROM producto
 

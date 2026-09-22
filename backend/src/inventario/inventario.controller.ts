@@ -13,7 +13,6 @@ import { ReporteCarga } from './inventario.types';
 export class InventarioController {
   constructor(private readonly inventarioService: InventarioService) {}
 
-  // POST /api/inventario/upload  (campo form-data: "file")
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
   async upload(@UploadedFile() file: Express.Multer.File): Promise<ReporteCarga> {
