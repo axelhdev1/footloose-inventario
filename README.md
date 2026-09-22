@@ -44,8 +44,3 @@ Backend en NestJS, frontend en Angular.
 - `Activo` lo dejé como `BIT` con valor por defecto 1 (ACTIVO).
 - Si una fila falla, elegí guardar las demás y reportar el error. La otra opción sería rechazar todo el archivo, y eso depende de cómo lo quiera trabajar el negocio.
 
-## Pendientes
-
-- Para archivos muy grandes, cambiar el bucle de inserts por un `MERGE` o un bulk insert.
-- Agregar un `docker-compose` con SQL Server.
-- Pruebas unitarias del servicio.
